@@ -1,0 +1,9 @@
+---
+title: Comparing methods for animation
+js:
+  - jstat 
+  - linear_algebra
+  - covariance
+  - animation
+  - jquery
+---

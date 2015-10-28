@@ -1,0 +1,156 @@
+How can we visualize a probability distribution of functions?
+
+One way is *animations*.
+Each frame shows a single function: a single sample from the distribution.
+Consecutive frames are *correlated*, so that the function appears to move.
+The vertical motion indicates the magnitude of the uncertainty at a point.
+The horizontal structure shows how different points are related to each other for functions in the distribution.
+
+Not all animation techniques are equally effective.
+This page compares different techniques: beginning with the pre-existing approaches, and working towards a new method which combines the best features of all.
+
+(Every figure visualizes the same distribution: a Squared Exponential covariance, with hyperparameters $\left(\ell = 1, \sigma = 1\right)$.)
+
+## Interpolation
+
+This method starts with a sequence of *independent* samples from the distribution.
+We then interpolate between neighboring samples, keeping the marginal distribution the same at all times.
+
+(In other words: *any* individual frame -- even an interpolated one -- shows a sample from the distribution.)
+
+<div id='chart_interp'></div>
+
+The main disadvantage is that the *keyframes* -- i.e., the frames with the original, independent samples -- are treated specially.
+Each keyframe exhibits a distracting "jerk" in the motion, as the function pivots to move towards the next keyframe.
+
+## Great Circles
+
+*Great circles* are an alternative method which corrects the deficiencies of interpolation.
+Their motion is perfectly smooth.
+Moreover, every frame is exactly equivalent to every other frame.
+
+This method works by producing a great circle in $N$-dimensional space (where $N$ is the number of points in the curve).
+Both the radius of the circle and its orientation are random.
+
+<div id='chart_hennig'></div>
+
+This method exhibits more fluid and appealing motion, but it has a number of disadvantages.
+
+First, it repeats itself, so that any given animation only visualizes a small fraction of the distribution.
+(By contrast, the interpolation method can continuously generate new curves, and explore more and more of the distribution over time.)
+
+Second, circular paths are strongly *time-anticorrelated*.
+This means that whatever curve we see, we will soon see its "opposite".
+(In the case of zero-mean priors, as on this page, this means we will see the exact negative -- watch it and see!)
+
+## Delocalized oscillators
+
+This more flexible method contains the Great Circles method above as a special case.
+The motion is still perfectly smooth.
+However, it can be extended for longer time periods and take more complicated paths, visualizing much more of the distribution.
+
+<div id='chart_loop'></div>
+
+The downside is that it still eventually repeats.
+Moreover, the resource requirements are *quadratic* in the length of the animation!
+This creates an unfortunate tension: we want longer animations (because they show more of the distribution), but the resource requirements quickly become unmanageable.
+
+## Compact support covariance oscillators
+
+The method of *compact support covariance* combines the advantages of the above techniques, without the drawbacks.
+In this method, each frame is correlated only with other frames within a certain time window, $\Delta t$.
+This correlation function is smooth everywhere; therefore, so is the motion.
+Furthermore, although no frames are treated specially in any way (as with great circles and delocalized oscillators), we can continue to generate new frames with constant resource requirements (as with interpolation).
+
+<div id='chart_CS'></div>
+
+The resulting function does not journey from one discrete keyframe to the next, nor does it repeat its position indefinitely.
+Rather, it simply evolves.
+It takes a smooth, beautiful path through $N$-dimensional space, exploring more and more of the distribution as time goes on.
+The viewer of this function can understand the distribution it represents simply by watching it move.
+
+## Other distributions
+
+Of course, we could have visualized other distributions too.
+
+For example, consider the [family of Matérn covariance functions](https://en.wikipedia.org/wiki/Mat%C3%A9rn_covariance_function).
+They are categorized by an additional hyperparameter $\nu$, which [governs the degree of smoothness](http://ml.dcs.shef.ac.uk/gpip/slides/rasmussen.pdf).
+The $\nu = \frac{1}{2}$ case is equivalent to the Exponential covariance, while $\nu \rightarrow \infty$ is equivalent to the Squared Exponential covariance we've been visualizing above.
+
+On this page, you can change the covariance on the fly to see how different members of the Matérn family behave.
+Pressing `1` will show the $\nu = \frac{1}{2}$ case (i.e., the exponential).
+`2` will show $\nu = \frac{3}{2}$, `3` will show $\nu = \frac{5}{2}$, and `4` will return to the Squared Exponential ($\nu \rightarrow \infty$) we've already been visualizing.
+
+I particularly recommend going up and down the "ladder" -- going from 1 up to 3, and back -- to get a feel for the effect of $\nu$.
+The functions are fairly similar, but more (1) or less (3) jaggy.
+
+Happy viewing!
+
+<script type='text/javascript'>
+// Load the Visualization API.
+google.load('visualization', '1.0', {'packages':['corechart']});
+// Set a callback to run when the Google Visualization API is loaded.
+var myChart = null;
+google.setOnLoadCallback(loaded);
+
+// Global variables I might find useful.
+var x = Sequence(0, 8, 51);
+
+function loaded() {
+  var k_SE = SquaredExponential(1, 1);
+  var k_Exp = Exponential(1, 1);
+
+  interpChart = AnimatedChart(
+      InterpolatingGenerator(x, jStat(x).multiply(0), k_SE, 10),
+      'chart_interp',
+      'Interpolation: Skilling (1992); Ehlschlaeger, Shortridge, Goodchild (1997)');
+  interpChart.start();
+
+  hennigChart = AnimatedChart(
+      HennigGenerator(x, jStat(x).multiply(0), k_SE, 20),
+      'chart_hennig',
+      'Great circles: Hennig (2013)');
+  hennigChart.start();
+
+  loopingChart = AnimatedChart(
+      OscillatingGenerator(x, jStat(x).multiply(0), k_SE, 20, 8),
+      'chart_loop',
+      'Delocalized oscillators: Hogg (2013)');
+  loopingChart.start();
+
+  csChart = AnimatedChart(
+      DatasetGenerator(x, jStat(x).multiply(0), k_SE, 20),
+      'chart_CS',
+      'Compact support covariance: Hogg (2015)');
+  csChart.start();
+};
+</script>
+
+<script type='text/javascript'>
+handleKeyPress = function(e) {
+  e = e || window.event;
+  var k;
+  switch (String.fromCharCode(e.keyCode)) {
+    case '1':
+      k = Exponential(1, 1);
+      break;
+    case '2':
+      k = Matern3v2(1, 1);
+      break;
+    case '3':
+      k = Matern5v2(1, 1);
+      break;
+    case '4':
+      k = SquaredExponential(1, 1);
+      break;
+    default:
+      return;
+  }
+  interpChart.UpdateCovariance(k);
+  hennigChart.UpdateCovariance(k);
+  loopingChart.UpdateCovariance(k);
+  csChart.UpdateCovariance(k);
+}
+
+document.addEventListener("keypress", handleKeyPress, false);
+</script>
