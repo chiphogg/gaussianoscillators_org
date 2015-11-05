@@ -30,7 +30,6 @@ function CompactSupportCovarianceMatrix(N) {
 }
 
 function OscillatingMatrix(n_indep, n_timesteps) {
-  var factor = 1.0 / Math.sqrt(n_indep);
   return jStat.create(n_timesteps, 2 * n_indep, function(i, j) {
     // The more independent points, the longer we go before repeating: note that
     // max(t) = 2.0 * n_indep.
