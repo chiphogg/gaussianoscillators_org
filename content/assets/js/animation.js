@@ -50,6 +50,56 @@ function independentOscillator(n) {
   };
 }
 
+// An oscillator which interpolates (trigonometrically) between independent
+// timesteps.
+function interpolatingOscillator(n, n_t) {
+  // Two independent n-dimensional normal samples (we will interpolate between
+  // them).
+  var noise = jStat.create(2, n, standardNormal);
+  // The index of the most recent normal draw.
+  var i_prev = 0;
+  // A convenience variable to hold the current interpolated noise.
+  var cachedNoise = jStat(noise[i_prev]).multiply(1)[0];
+  // The index of the frame we are interpolating.
+  var i = 0;
+
+  function incrementCounter() {
+    i += 1;
+
+    // If we've reached the next independent sample: reset the counter,
+    // generate new data, and mark the *other* independent sample as the
+    // "most recent".
+    if (i == n_t) {
+      i = 0;
+      newStandardNormalsForRow(noise, i_prev);
+      i_prev = 1 - i_prev;
+    }
+  }
+
+  function storeInterpolatedNoise() {
+    var angle = (i / n_t) * (Math.PI / 2);
+    var old_factor = Math.cos(angle);
+    var new_factor = Math.sin(angle);
+    for (var j = 0; j < cachedNoise.length; ++j) {
+      cachedNoise[j] = (old_factor * noise[i_prev][j] +
+                        new_factor * noise[1 - i_prev][j]); 
+    }
+  }
+
+  return Object.assign(
+      Object.create(independentOscillator(n)),
+      {
+        advance: function() {
+          incrementCounter();
+          storeInterpolatedNoise();
+        },
+        currentNoise: function() {
+          return cachedNoise;
+        }
+
+      });
+}
+
 // Thanks to http://stackoverflow.com/a/10284006 for zip() function.
 function zip(arrays) {
   return arrays[0].map(function(_, i) {
