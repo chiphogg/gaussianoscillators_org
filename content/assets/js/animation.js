@@ -100,6 +100,36 @@ function interpolatingOscillator(n, n_t) {
       });
 }
 
+// A CSC (Compact Support Covariance) Oscillator (Hogg 2015).
+function compactSupportCovarianceOscillator(n, n_t) {
+  // A matrix of independent normal samples with n_t rows.
+  // At every stage, we will replace the oldest row with brand new samples.
+  var random_matrix = jStat.create(n_t, n, standardNormal);
+  // A matrix where each row is equivalent to the previous, but shifted by one.
+  var L_t = LoopingCholesky(CompactSupportCovarianceMatrix(n_t));
+  // The row of L_t which holds the vector to use.
+  var i = 0;
+  // A convenience variable to hold the current interpolated noise.
+  var cachedNoise = null;
+
+  function storeInterpolatedNoise() {
+    cachedNoise = jStat(L_t[i]).multiply(random_matrix)[0];
+  }
+
+  return Object.assign(
+      Object.create(independentOscillator(n)),
+      {
+        advance: function() {
+          newStandardNormalsForRow(random_matrix, i);
+          i = (i + 1) % n_t;
+          storeInterpolatedNoise();
+        },
+        currentNoise: function() {
+          return cachedNoise;
+        }
+      });
+}
+
 // Thanks to http://stackoverflow.com/a/10284006 for zip() function.
 function zip(arrays) {
   return arrays[0].map(function(_, i) {
