@@ -12,6 +12,44 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.// Utility functions for animated plots.
 
+function standardNormal() {
+  return jStat.normal.sample(0, 1);
+}
+
+function newStandardNormalsForRow(matrix, row) {
+  for (var i = 0; i < matrix[row].length; ++i) {
+    matrix[row][i] = standardNormal();
+  }
+}
+
+//------------------------------------------------------------------------------
+// Gaussian oscillators.
+
+// A Gaussian oscillator with delta-distribution covariance.  (In other words:
+// every timestep is independent.)
+function independentOscillator(n) {
+  var noise = jStat.create(1, n, standardNormal);
+
+  return {
+    advance: function() {
+      newStandardNormalsForRow(noise, 0);
+    },
+    currentNoise: function() {
+      return noise[0];
+    },
+    toString: function() {
+      var output = '[';
+      var comma = '';
+      var noise = this.currentNoise();
+      for (var i = 0; i < n; ++i) {
+        output += comma + noise[i].toFixed(3);
+        comma = ', ';
+      }
+      return output + ']';
+    }
+  };
+}
+
 // Thanks to http://stackoverflow.com/a/10284006 for zip() function.
 function zip(arrays) {
   return arrays[0].map(function(_, i) {
