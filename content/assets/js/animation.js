@@ -130,6 +130,81 @@ function compactSupportCovarianceOscillator(n, n_t) {
       });
 }
 
+// A helper for looping Gaussian Oscillators, which store all their frames in
+// memory.  This simply loops through a matrix.
+function looper(matrix) {
+  // The index of the current row.
+  var i = 0;
+
+  return {
+    advance: function() {
+      i = (i + 1) % matrix.length;
+    },
+    current: function() {
+      return matrix[i];
+    }
+  };
+}
+
+function hennigMatrix(n, n_t) {
+  // Normalize a vector in-place.
+  function normalize(v) {
+    var factor = 1 / Math.sqrt(jStat.dot(v, v));
+    for (var i = 0; i < v.length; ++i) {
+      v[i] *= factor;
+    }
+  }
+  // An n-dimensional unit vector with a random direction.
+  function randomUnitVector(n) {
+    var v = jStat.create(1, n, standardNormal)[0];
+    normalize(v);
+    return v;
+  }
+
+  // Reserve space for the matrix.
+  var mat = jStat.zeros(n_t, n);
+
+  // Generate the first draw from the normal; record its magnitude, and
+  // normalize it.
+  var first = jStat.create(1, n, standardNormal)[0];
+  var magnitude = Math.sqrt(jStat.dot(first, first));
+  normalize(first);
+
+  // Generate the second draw; orthogonalize it, and normalize it.
+  var second = randomUnitVector(n);
+  var overlap = jStat.dot(first, second);
+  for (var i = 0; i < second.length; ++i) {
+    second[i] -= overlap * first[i];
+  }
+  normalize(second);
+
+  for (var i = 0; i < n_t; ++i) {
+    var angle = 2 * Math.PI * i / n_t;
+    var c_first = magnitude * Math.cos(angle);
+    var c_second = magnitude * Math.sin(angle);
+    for (var j = 0; j < mat[i].length; ++j) {
+      mat[i][j] = c_first * first[j] + c_second * second[j];
+    }
+  }
+  return mat;
+}
+
+// Great Circle oscillators (Hennig 2013).
+function hennigOscillator(n, n_total) {
+  var noise = looper(hennigMatrix(n, n_total));
+
+  return Object.assign(
+      Object.create(independentOscillator(n)),
+      {
+        advance: function() {
+          noise.advance();
+        },
+        currentNoise: function() {
+          return noise.current();
+        }
+      });
+}
+
 // Thanks to http://stackoverflow.com/a/10284006 for zip() function.
 function zip(arrays) {
   return arrays[0].map(function(_, i) {
