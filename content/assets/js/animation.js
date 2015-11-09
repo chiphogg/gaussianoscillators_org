@@ -189,12 +189,13 @@ function hennigMatrix(n, n_t) {
   return mat;
 }
 
-// Great Circle oscillators (Hennig 2013).
-function hennigOscillator(n, n_total) {
-  var noise = looper(hennigMatrix(n, n_total));
+// A base class for finite looping Gaussian oscillators, which store all their
+// values in memory in the matrix.
+function finiteLoopingOscillator(matrix) {
+  var noise = looper(matrix);
 
   return Object.assign(
-      Object.create(independentOscillator(n)),
+      Object.create(independentOscillator(matrix[0].length)),
       {
         advance: function() {
           noise.advance();
@@ -203,6 +204,18 @@ function hennigOscillator(n, n_total) {
           return noise.current();
         }
       });
+}
+
+// Great Circle oscillators (Hennig 2013).
+function hennigOscillator(n, n_total) {
+  return finiteLoopingOscillator(hennigMatrix(n, n_total));
+}
+
+// Delocalized oscillators (Hogg 2013).
+function delocalizedOscillator(n, n_t, n_indep) {
+  return finiteLoopingOscillator(
+      jStat(OscillatingMatrix(n_indep, n_indep * n_t))
+      .multiply(jStat.create(2 * n_indep, n, standardNormal)));
 }
 
 // Thanks to http://stackoverflow.com/a/10284006 for zip() function.
