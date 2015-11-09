@@ -233,19 +233,22 @@ function OscillatingGeneratorBase(x, mu, kFunc, N_t, N_indep, lock_magnitude) {
   var n_timesteps = N_indep * N_t;
   var M = OscillatingMatrix(N_indep, n_timesteps);
   // Random data we'll use to seed the animation.
-  var random_matrix = jStat(M).multiply(
-      jStat.create(2 * N_indep, N, function(i, j) {
-        return jStat.normal.sample(0, 1);
-      }));
+  var seed_matrix = jStat.create(2 * N_indep, N, standardNormal);
   // Passing lock_magnitude == true and N_indep == 1 means we should make this
   // into Hennig's method, where orbits are constrained to be circular.  We do
   // this by giving the second row of random draws the same magnitude as the
   // first.
   if (lock_magnitude && N_indep == 1) {
+    var mag = seed_matrix.map(function(x) {
+      return Math.sqrt(jStat.dot(x, x));
+    });
+    var scale = mag[0] / mag[1];
     for (var a = 0; a < N; ++a) {
-      random_matrix[1][a] = random_matrix[0][a];
+      seed_matrix[1][a] *= scale;
     }
   }
+  // Convert seed matrix into a continuous (in time) random matrix.
+  var random_matrix = jStat(M).multiply(seed_matrix);
 
   // The covariance matrix in space.
   K = CovarianceMatrix(x, kFunc);
