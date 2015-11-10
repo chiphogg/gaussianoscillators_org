@@ -100,6 +100,16 @@ function interpolatingOscillator(n, n_t) {
       });
 }
 
+// Create a covariance matrix with compact support for a given number of equally
+// spaced points.
+function CompactSupportCovarianceMatrix(N) {
+  return jStat.create(N, N, function(i, j) {
+    var dt = Math.abs(i - j) / N;
+    return (Math.pow(1 - dt, 6)
+            * ((12.8 * dt * dt * dt) + (13.8 * dt * dt) + (6 * dt) + 1));
+  });
+}
+
 // A CSC (Compact Support Covariance) Oscillator (Hogg 2015).
 function compactSupportCovarianceOscillator(n, n_t) {
   // A matrix of independent normal samples with n_t rows.
@@ -211,6 +221,17 @@ function hennigOscillator(n, n_total) {
   return finiteLoopingOscillator(hennigMatrix(n, n_total));
 }
 
+function OscillatingMatrix(n_indep, n_timesteps) {
+  return jStat.create(n_timesteps, 2 * n_indep, function(i, j) {
+    // The more independent points, the longer we go before repeating: note that
+    // max(t) = 2.0 * n_indep.
+    var t = 2.0 * i * n_indep / n_timesteps;
+    var trig_func = (j % 2 == 0) ? Math.sin : Math.cos;
+    var order = Math.floor(j / 2) + 1;
+    return trig_func(Math.PI * order * t / n_indep) / Math.sqrt(n_indep);
+  });
+}
+
 // Delocalized oscillators (Hogg 2013).
 function delocalizedOscillator(n, n_t, n_indep) {
   return finiteLoopingOscillator(
@@ -222,27 +243,6 @@ function delocalizedOscillator(n, n_t, n_indep) {
 function zip(arrays) {
   return arrays[0].map(function(_, i) {
     return arrays.map(function(array) { return array[i]; })
-  });
-}
-
-// Create a covariance matrix with compact support for a given number of equally
-// spaced points.
-function CompactSupportCovarianceMatrix(N) {
-  return jStat.create(N, N, function(i, j) {
-    var dt = Math.abs(i - j) / N;
-    return (Math.pow(1 - dt, 6)
-            * ((12.8 * dt * dt * dt) + (13.8 * dt * dt) + (6 * dt) + 1));
-  });
-}
-
-function OscillatingMatrix(n_indep, n_timesteps) {
-  return jStat.create(n_timesteps, 2 * n_indep, function(i, j) {
-    // The more independent points, the longer we go before repeating: note that
-    // max(t) = 2.0 * n_indep.
-    var t = 2.0 * i * n_indep / n_timesteps;
-    var trig_func = (j % 2 == 0) ? Math.sin : Math.cos;
-    var order = Math.floor(j / 2) + 1;
-    return trig_func(Math.PI * order * t / n_indep) / Math.sqrt(n_indep);
   });
 }
 
