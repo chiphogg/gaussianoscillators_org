@@ -246,54 +246,32 @@ function zip(arrays) {
   });
 }
 
-function DatasetGenerator(x, mu, kFunc, N_t) {
-  var return_object = {};
+function DatasetGenerator(x, mu, kFunc, n_t) {
+  // Compute a new upper-triangular cholesky root, given a covariance function.
+  function upperCholeskyCovariance(kFunc) {
+    return jStat.transpose(Cholesky(CovarianceMatrix(x, kFunc)));
+  }
+  // The upper-triangular cholesky root of the (space) covariance matrix.
+  var U = upperCholeskyCovariance(kFunc);
+  // An N-dimensional Gaussian oscillator (where N is the number of points in
+  // x).
+  var cscOscillator = compactSupportCovarianceOscillator(x.length, n_t);
 
-  // First section: declare member variables for the closure.
-  //
-  // The x-values for this closure.
-  return_object.x = x;
-  // The number of timesteps we need to keep in memory.
-  var N_t = N_t;
-  // The number of points in the dataset.
-  var N = x.length;
-  // The time-domain covariance matrix (with compact support).
-  var K_t = CompactSupportCovarianceMatrix(N_t);
-  // Each row of L_t is a vector to multiply different timesteps.
-  var L_t = LoopingCholesky(K_t);
-  var random_matrix = jStat.create(N_t, N, function(i, j) {
-    return jStat.normal.sample(0, 1);
-  });
-  // i indicates which vector from L_t to use, and also which row of the random
-  // matrix to update.
-  var i = N_t - 1;
-  // The covariance matrix in space.
-  //
-  // We add a small amount of noise on the diagonal to help computational
-  // stability.
-  var K = CovarianceMatrix(x, kFunc);
-  var U = jStat.transpose(Cholesky(K));
-
-  return_object.NextDataset = function() {
-    // Compute the next data.
-    var independent_data = jStat(L_t[i]).multiply(random_matrix)[0];
-    // Generate new random numbers.
-    for (var j = 0; j < N; ++j) {
-      random_matrix[i][j] = jStat.normal.sample(0, 1);
+  return {
+    // The x-values for this closure.
+    x: x,
+    // The number of points in the dataset.
+    N: x.length,
+    // Advance to the next dataset and return it.
+    NextDataset: function() {
+      cscOscillator.advance();
+      return jStat(cscOscillator.currentNoise()).multiply(U)[0];
+    },
+    // Update to a new space-domain covariance.
+    UpdateCovariance: function(kFunc) {
+      U = upperCholeskyCovariance(kFunc);
     }
-    // Update the counter.
-    i = ((i > 0) ? i : N_t) - 1
-    // Return the next dataset.
-    var new_data = jStat(independent_data).multiply(U)[0];
-    return new_data;
-  }
-
-  return_object.UpdateCovariance = function(kFunc) {
-    var K = CovarianceMatrix(x, kFunc);
-    U = jStat.transpose(Cholesky(K));
-  }
-
-  return return_object;
+  };
 };
 
 function HennigGenerator(x, mu, kFunc, N_t) {
