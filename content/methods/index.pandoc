@@ -32,7 +32,7 @@ Moreover, every frame is exactly equivalent to every other frame.
 This method works by producing a great circle in $N$-dimensional space (where $N$ is the number of points in the curve).
 Both the radius of the circle and its orientation are random.
 
-<div id='chart_hennig'></div>
+<div id='chart_great_circle'></div>
 
 This method exhibits more fluid and appealing motion, but it has a number of disadvantages.
 
@@ -106,14 +106,14 @@ function loaded() {
       'Interpolation: Skilling (1992); Ehlschlaeger, Shortridge, Goodchild (1997)');
   interpChart.start();
 
-  hennigChart = AnimatedChart(
-      HennigGenerator(x, jStat(x).multiply(0), k_SE, 20),
-      'chart_hennig',
+  greatCircleChart = AnimatedChart(
+      GreatCircleGenerator(x, jStat(x).multiply(0), k_SE, 20),
+      'chart_great_circle',
       'Great circles: Hennig (2013)');
-  hennigChart.start();
+  greatCircleChart.start();
 
   loopingChart = AnimatedChart(
-      OscillatingGenerator(x, jStat(x).multiply(0), k_SE, 20, 8),
+      DelocalizedGenerator(x, jStat(x).multiply(0), k_SE, 20, 8),
       'chart_loop',
       'Delocalized oscillators: Hogg (2013)');
   loopingChart.start();
@@ -147,7 +147,7 @@ handleKeyPress = function(e) {
       return;
   }
   interpChart.UpdateCovariance(k);
-  hennigChart.UpdateCovariance(k);
+  greatCircleChart.UpdateCovariance(k);
   loopingChart.UpdateCovariance(k);
   csChart.UpdateCovariance(k);
 }

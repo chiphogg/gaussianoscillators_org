@@ -156,7 +156,7 @@ function looper(matrix) {
   };
 }
 
-function hennigMatrix(n, n_t) {
+function greatCircleMatrix(n, n_t) {
   // Normalize a vector in-place.
   function normalize(v) {
     var factor = 1 / Math.sqrt(jStat.dot(v, v));
@@ -217,8 +217,8 @@ function finiteLoopingOscillator(matrix) {
 }
 
 // Great Circle oscillators (Hennig 2013).
-function hennigOscillator(n, n_total) {
-  return finiteLoopingOscillator(hennigMatrix(n, n_total));
+function greatCircleOscillator(n, n_total) {
+  return finiteLoopingOscillator(greatCircleMatrix(n, n_total));
 }
 
 function OscillatingMatrix(n_indep, n_timesteps) {
@@ -275,11 +275,11 @@ function DatasetGenerator(x, mu, kFunc, n_t) {
   };
 };
 
-function HennigGenerator(x, mu, kFunc, N_t) {
+function GreatCircleGenerator(x, mu, kFunc, N_t) {
   return OscillatingGeneratorBase(x, mu, kFunc, N_t, 1, true);
 }
 
-function OscillatingGenerator(x, mu, kFunc, N_t, N_indep) {
+function DelocalizedGenerator(x, mu, kFunc, N_t, N_indep) {
   return OscillatingGeneratorBase(x, mu, kFunc, N_t, N_indep, false);
 }
 
