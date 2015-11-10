@@ -291,59 +291,12 @@ function DelocalizedGenerator(x, mu, kFunc, n_t, n_indep) {
         });
 }
 
-function InterpolatingGenerator(x, mu, kFunc, N_t) {
-  var return_object = {};
-
-  // First section: declare member variables for the closure.
-  //
-  // The x-values for this closure.
-  return_object.x = x;
-  // The number of timesteps from one "independent" frame to the next.
-  var N_t = N_t;
-  // The number of points in the dataset.
-  var N = x.length;
-  // Random data we'll use to seed the animation.
-  var random_matrix = jStat.create(2, N, function(i, j) {
-    return jStat.normal.sample(0, 1);
-  });
-
-  // The covariance matrix in space.
-  K = CovarianceMatrix(x, kFunc);
-  var U = jStat.transpose(Cholesky(K));
-
-  // The number of timesteps after a keyframe.
-  var i = 0;
-  // Which row is the "primary" row.
-  var row = 0;
-  // A coefficient matrix to mix the keyframes.
-  var coefficients = jStat.create(1, 2, function(i, j) { return 0; });
-
-  return_object.NextDataset = function() {
-    var frac = i / N_t;
-    // Compute the next data.
-    coefficients[row    ] = Math.cos(Math.PI * frac / 2.0);
-    coefficients[1 - row] = Math.sin(Math.PI * frac / 2.0);
-    var independent_data = jStat(coefficients).multiply(random_matrix)[0];
-    var new_data = jStat(independent_data).multiply(U)[0];
-    // Update the counter.
-    i++;
-    if (i == N_t) {
-      for (var j = 0; j < N; ++j) {
-        random_matrix[row][j] = jStat.normal.sample(0, 1);
-      }
-      i = 0;
-      row = 1 - row;
-    }
-    // Return the next dataset.
-    return new_data;
-  }
-
-  return_object.UpdateCovariance = function(kFunc) {
-    var K = CovarianceMatrix(x, kFunc);
-    U = jStat.transpose(Cholesky(K));
-  }
-
-  return return_object;
+function InterpolatingGenerator(x, mu, kFunc, n_t) {
+  return Object.assign(
+      Object.create(DatasetGenerator(x, mu, kFunc, n_t)),
+        {
+          gaussianOscillator: interpolatingOscillator(x.length, n_t)
+        });
 };
 
 // Return a chart object.
