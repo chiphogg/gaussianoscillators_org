@@ -254,19 +254,19 @@ function upperCholeskyCovariance(x, kFunc) {
 function DatasetGenerator(x, mu, kFunc, n_t) {
   // The upper-triangular cholesky root of the (space) covariance matrix.
   var U = upperCholeskyCovariance(x, kFunc);
-  // An N-dimensional Gaussian oscillator (where N is the number of points in
-  // x).
-  var cscOscillator = compactSupportCovarianceOscillator(x.length, n_t);
 
   return {
     // The x-values for this closure.
     x: x,
     // The number of points in the dataset.
     N: x.length,
+    // The underlying Gaussian Oscillator which powers this animation.
+    gaussianOscillator: compactSupportCovarianceOscillator(x.length, n_t),
+    // Advance to the next dataset and return it.
     // Advance to the next dataset and return it.
     NextDataset: function() {
-      cscOscillator.advance();
-      return jStat(cscOscillator.currentNoise()).multiply(U)[0];
+      this.gaussianOscillator.advance();
+      return jStat(this.gaussianOscillator.currentNoise()).multiply(U)[0];
     },
     // Update to a new space-domain covariance.
     UpdateCovariance: function(kFunc) {
@@ -275,71 +275,21 @@ function DatasetGenerator(x, mu, kFunc, n_t) {
   };
 };
 
-function GreatCircleGenerator(x, mu, kFunc, N_t) {
-  return OscillatingGeneratorBase(x, mu, kFunc, N_t, 1, true);
+function GreatCircleGenerator(x, mu, kFunc, n_t) {
+  return Object.assign(
+      Object.create(DatasetGenerator(x, mu, kFunc, n_t)),
+        {
+          gaussianOscillator: greatCircleOscillator(x.length, 2 * n_t)
+        });
 }
 
-function DelocalizedGenerator(x, mu, kFunc, N_t, N_indep) {
-  return OscillatingGeneratorBase(x, mu, kFunc, N_t, N_indep, false);
+function DelocalizedGenerator(x, mu, kFunc, n_t, n_indep) {
+  return Object.assign(
+      Object.create(DatasetGenerator(x, mu, kFunc, n_t)),
+        {
+          gaussianOscillator: delocalizedOscillator(x.length, n_t, n_indep)
+        });
 }
-
-function OscillatingGeneratorBase(x, mu, kFunc, N_t, N_indep, lock_magnitude) {
-  var return_object = {};
-
-  // First section: declare member variables for the closure.
-  //
-  // The x-values for this closure.
-  return_object.x = x;
-  // The number of timesteps from one "independent" frame to the next.
-  var N_t = N_t;
-  // The number of points in the dataset.
-  var N = x.length;
-  // The "time" between frames.
-  var dt = 1.0 / N_t;
-  // The matrix to convert random noise into oscillating timetraces.
-  var n_timesteps = N_indep * N_t;
-  var M = OscillatingMatrix(N_indep, n_timesteps);
-  // Random data we'll use to seed the animation.
-  var seed_matrix = jStat.create(2 * N_indep, N, standardNormal);
-  // Passing lock_magnitude == true and N_indep == 1 means we should make this
-  // into Hennig's method, where orbits are constrained to be circular.  We do
-  // this by giving the second row of random draws the same magnitude as the
-  // first.
-  if (lock_magnitude && N_indep == 1) {
-    var mag = seed_matrix.map(function(x) {
-      return Math.sqrt(jStat.dot(x, x));
-    });
-    var scale = mag[0] / mag[1];
-    for (var a = 0; a < N; ++a) {
-      seed_matrix[1][a] *= scale;
-    }
-  }
-  // Convert seed matrix into a continuous (in time) random matrix.
-  var random_matrix = jStat(M).multiply(seed_matrix);
-
-  // The covariance matrix in space.
-  K = CovarianceMatrix(x, kFunc);
-  var U = jStat.transpose(Cholesky(K));
-
-  var i = n_timesteps - 1;
-
-  return_object.NextDataset = function() {
-    // Compute the next data.
-    var independent_data = random_matrix[i];
-    // Update the counter.
-    i = ((i > 0) ? i : n_timesteps) - 1
-    // Return the next dataset.
-    var new_data = jStat(independent_data).multiply(U)[0];
-    return new_data;
-  }
-
-  return_object.UpdateCovariance = function(kFunc) {
-    var K = CovarianceMatrix(x, kFunc);
-    U = jStat.transpose(Cholesky(K));
-  }
-
-  return return_object;
-};
 
 function InterpolatingGenerator(x, mu, kFunc, N_t) {
   var return_object = {};
