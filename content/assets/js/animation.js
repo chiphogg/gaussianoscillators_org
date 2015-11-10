@@ -261,7 +261,11 @@ function DatasetGenerator(x, mu, kFunc, n_t) {
     // The number of points in the dataset.
     N: x.length,
     // The underlying Gaussian Oscillator which powers this animation.
-    gaussianOscillator: compactSupportCovarianceOscillator(x.length, n_t),
+    gaussianOscillator: {
+      advance: function() {
+        alert('Abstract base class!  Must override gaussianOscillator.');
+      }
+    },
     // Advance to the next dataset and return it.
     // Advance to the next dataset and return it.
     NextDataset: function() {
@@ -274,6 +278,14 @@ function DatasetGenerator(x, mu, kFunc, n_t) {
     }
   };
 };
+
+function CompactSupportCovarianceGenerator(x, mu, kFunc, n_t) {
+  return Object.assign(
+      Object.create(DatasetGenerator(x, mu, kFunc, n_t)),
+        {
+          gaussianOscillator: compactSupportCovarianceOscillator(x.length, n_t)
+        });
+}
 
 function GreatCircleGenerator(x, mu, kFunc, n_t) {
   return Object.assign(

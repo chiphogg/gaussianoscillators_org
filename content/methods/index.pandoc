@@ -119,7 +119,7 @@ function loaded() {
   loopingChart.start();
 
   csChart = AnimatedChart(
-      DatasetGenerator(x, jStat(x).multiply(0), k_SE, 20),
+      CompactSupportCovarianceGenerator(x, jStat(x).multiply(0), k_SE, 20),
       'chart_CS',
       'Compact support covariance: Hogg (2015)');
   csChart.start();
