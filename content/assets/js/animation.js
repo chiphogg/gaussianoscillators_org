@@ -246,13 +246,14 @@ function zip(arrays) {
   });
 }
 
+// Compute a new upper-triangular cholesky root, given a covariance function.
+function upperCholeskyCovariance(x, kFunc) {
+  return jStat.transpose(Cholesky(CovarianceMatrix(x, kFunc)));
+}
+
 function DatasetGenerator(x, mu, kFunc, n_t) {
-  // Compute a new upper-triangular cholesky root, given a covariance function.
-  function upperCholeskyCovariance(kFunc) {
-    return jStat.transpose(Cholesky(CovarianceMatrix(x, kFunc)));
-  }
   // The upper-triangular cholesky root of the (space) covariance matrix.
-  var U = upperCholeskyCovariance(kFunc);
+  var U = upperCholeskyCovariance(x, kFunc);
   // An N-dimensional Gaussian oscillator (where N is the number of points in
   // x).
   var cscOscillator = compactSupportCovarianceOscillator(x.length, n_t);
@@ -269,7 +270,7 @@ function DatasetGenerator(x, mu, kFunc, n_t) {
     },
     // Update to a new space-domain covariance.
     UpdateCovariance: function(kFunc) {
-      U = upperCholeskyCovariance(kFunc);
+      U = upperCholeskyCovariance(this.x, kFunc);
     }
   };
 };
