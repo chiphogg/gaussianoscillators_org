@@ -311,6 +311,33 @@ function InterpolatingGenerator(x, mu, kFunc, n_t) {
         });
 };
 
+function linearModel(options) {
+  return Object.assign(
+      {
+        inBounds: function(x) {
+          return (this.bounds && this.bounds[0] && this.bounds[1]
+                  ? x >= this.bounds[0] && x <= this.bounds[1]
+                  : true);
+        },
+
+        // Compute a matrix to fit the data at these particular x-values (or at
+        // least, the ones which are in-bounds if this model is bounded).
+        train: function(x) {
+          // Analytical solution for ordinary least squares.
+          var X = jStat.create(2, x.length, (function(i, j) {
+            return (this.inBounds(x[j])
+                    ? Math.pow(x[j], i)
+                    : 0);
+          }).bind(this));
+          this.M = jStat.multiply(
+              jStat.inv(jStat.multiply(X, jStat.transpose(X))), X);
+          this.xMin = this.bounds && this.bounds[0] || Math.min.apply(null, x);
+          this.xMax = this.bounds && this.bounds[1] || Math.max.apply(null, x);
+        }
+      },
+      options);
+}
+
 // A set of data points which can change over time.
 //
 // Args:
