@@ -17,8 +17,6 @@ function loaded() {
 
   // The x-values where we have data.
   var x = Sequence(0, 8, totalPoints);
-  // The y-values give the mean of the data (which in this case is 0 everywhere).
-  var y = Sequence(0, 0, totalPoints);
   // Compute the x-values where the piecewise linear model should break.
   var boundaryPoints = Sequence(0, 8, numSections + 1)
   // The changing part of the data will be a Gaussian Oscillator.  So at every
@@ -31,9 +29,7 @@ function loaded() {
                                                          numTimesteps);
 
   // Construct an object for the fake data.
-  var randomData = animatedDataGenerator({
-    x: x,
-    y: y,
+  var randomData = animatedDataGenerator(x, {
     animatedNoise: cscOscillator
   });
 

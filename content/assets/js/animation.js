@@ -311,6 +311,46 @@ function InterpolatingGenerator(x, mu, kFunc, n_t) {
         });
 };
 
+// A set of data points which can change over time.
+//
+// Args:
+//   options:  A dictionary of options, especially:
+//     y:  An array of y-values, assumed to be the same length as x.
+//     animatedNoise:  A Gaussian oscillator which defines how the data will
+//       change over time.
+function animatedDataGenerator(x, options) {
+  return Object.assign(
+      {
+        // Advance to the next data values.
+        advance: function() {
+          this.animatedNoise && this.animatedNoise.advance &&
+            this.animatedNoise.advance();
+        },
+        
+        // Retrieve the current y-value.  Both this.y and this.currentNoise
+        // default to 0 if absent.
+        currentY: function() {
+          return x.map(
+              function(_, i) {
+                return (this.y && this.y[i] || 0) + 
+                       (this.animatedNoise &&
+                        this.animatedNoise.currentNoise()[i] || 0);
+              }, this);
+        },
+
+        // Useful for constructing a google.visualization.DataTable.
+        toJSON: function() {
+          return {
+            cols: [
+              {id: 'x', label: 'x', pattern: '', type: 'number'},
+              {id: 'y', label: 'y', pattern: '', type: 'number'}],
+            rows: zip([x, this.currentY()])
+          };
+        }
+      },
+      options);
+}
+
 // Return a chart object.
 function AnimatedChart(dataset_generator, div_id, title, chart_type, options) {
   chart_type = (typeof chart_type !== 'undefined') ?
