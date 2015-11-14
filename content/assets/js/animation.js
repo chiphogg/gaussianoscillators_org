@@ -311,30 +311,48 @@ function InterpolatingGenerator(x, mu, kFunc, n_t) {
         });
 };
 
-function linearModel(options) {
+function genericLinearModel(modelFunctions, options) {
   return Object.assign(
       {
+        // Whether or not the given x-value is within the bounds (if any) of
+        // this model.
         inBounds: function(x) {
           return (this.bounds && this.bounds[0] && this.bounds[1]
                   ? x >= this.bounds[0] && x <= this.bounds[1]
                   : true);
         },
 
+        // An array of function(x).  The i'th element gives the i'th model
+        // Function.
+        modelFunctions: modelFunctions,
+
+        // The i'th model function's value at x -- but only if x is within the
+        // bounds (if any).
+        boundedModelFunction: function(x, i) {
+          return this.inBounds(x) ? this.modelFunctions[i](x) : 0;
+        },
+
         // Compute a matrix to fit the data at these particular x-values (or at
         // least, the ones which are in-bounds if this model is bounded).
         train: function(x) {
           // Analytical solution for ordinary least squares.
-          var X = jStat.create(2, x.length, (function(i, j) {
-            return (this.inBounds(x[j])
-                    ? Math.pow(x[j], i)
-                    : 0);
-          }).bind(this));
+          var X = jStat.create(modelFunctions.length, x.length, (
+                function(i, j) {
+                  return this.boundedModelFunction(x[j], i);
+                }).bind(this));
           this.M = jStat.multiply(
               jStat.inv(jStat.multiply(X, jStat.transpose(X))), X);
           this.xMin = this.bounds && this.bounds[0] || Math.min.apply(null, x);
           this.xMax = this.bounds && this.bounds[1] || Math.max.apply(null, x);
         }
       },
+      options);
+}
+
+function linearModel(options) {
+  return genericLinearModel(
+      [function(_) { return 1; },
+       function(x) { return x; }],
       options);
 }
 
