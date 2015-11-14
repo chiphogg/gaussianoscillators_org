@@ -98,7 +98,6 @@ var x = Sequence(0, 8, 51);
 
 function loaded() {
   var k_SE = SquaredExponential(1, 1);
-  var k_Exp = Exponential(1, 1);
 
   interpChart = AnimatedChart(
       InterpolatingGenerator(x, jStat(x).multiply(0), k_SE, 10),
