@@ -120,10 +120,10 @@ function compactSupportCovarianceOscillator(n, n_t) {
   // The row of L_t which holds the vector to use.
   var i = 0;
   // A convenience variable to hold the current interpolated noise.
-  var cachedNoise = null;
+  var cachedNoise = interpolatedNoise();
 
-  function storeInterpolatedNoise() {
-    cachedNoise = jStat(L_t[i]).multiply(random_matrix)[0];
+  function interpolatedNoise() {
+    return jStat(L_t[i]).multiply(random_matrix)[0];
   }
 
   return Object.assign(
@@ -132,7 +132,7 @@ function compactSupportCovarianceOscillator(n, n_t) {
         advance: function() {
           newStandardNormalsForRow(random_matrix, i);
           i = (i + 1) % n_t;
-          storeInterpolatedNoise();
+          cachedNoise = interpolatedNoise();
         },
         currentNoise: function() {
           return cachedNoise;
