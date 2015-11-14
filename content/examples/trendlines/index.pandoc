@@ -1,0 +1,62 @@
+<div id='randomness'></div>
+
+<script type='text/javascript'>
+
+// Load the Visualization API.
+google.load('visualization', '1.0', {'packages': ['corechart']});
+// Set a callback to run when the Google Visualization API is loaded.
+google.setOnLoadCallback(loaded);
+
+function loaded() {
+  // Characteristics of the fake data.
+  var pointsPerSection = 10;
+  var numSections = 4;
+  // When computing the total number of points, remember that the last point of
+  // each section is the same as the first point of the next section.
+  var totalPoints = (numSections * (pointsPerSection - 1) + 1);
+
+  // The x-values where we have data.
+  var x = Sequence(0, 8, totalPoints);
+  // The y-values give the mean of the data (which in this case is 0 everywhere).
+  var y = Sequence(0, 0, totalPoints);
+  // Compute the x-values where the piecewise linear model should break.
+  var boundaryPoints = Sequence(0, 8, numSections + 1)
+  // The changing part of the data will be a Gaussian Oscillator.  So at every
+  // timestep, the data will be purely random and independent noise, but the
+  // points will move smoothly from timestep to timestep.
+  var independenceTimeMs = 5000;
+  var frameLengthMs = 250;
+  var numTimesteps = Math.round(independenceTimeMs / frameLengthMs);
+  var cscOscillator = compactSupportCovarianceOscillator(totalPoints,
+                                                         numTimesteps);
+
+  // Construct an object for the fake data.
+  var randomData = animatedDataGenerator({
+    x: x,
+    y: y,
+    animatedNoise: cscOscillator
+  });
+
+  // Build a DataTable to hold all the data (both the random noise, and the
+  // models which fit it).
+  allData = animatedDataTable(randomData);
+  for (var i = 0; i < numSections; ++i) {
+    allData.addAndTrainModel(
+        linearModel(boundaryPoints[i], boundaryPoints[i + 1]));
+  }
+  var x_breaks = boundaryPoints.slice(1, -1);
+  allData.addAndTrainModel(piecewiseLinearModel(x_breaks));
+
+  // Construct a chart to show all these curves.
+  var chart = animatedChart({
+    parentId: 'randomness',
+    data: randomData,
+    frameLengthMs: frameLengthMs,
+    chart_options: {
+      title: 'Trendlines: connected, vs. not',
+    }
+  });
+  chart.start();
+}
+
+</script>

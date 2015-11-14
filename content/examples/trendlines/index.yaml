@@ -1,0 +1,9 @@
+---
+title: "Why to connect trendlines"
+js:
+  - jstat 
+  - linear_algebra
+  - covariance
+  - animation
+  - jquery
+---
