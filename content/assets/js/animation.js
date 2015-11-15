@@ -352,6 +352,19 @@ function genericLinearModel(modelFunctions, options) {
               jStat.inv(jStat.multiply(X, jStat.transpose(X))), X);
           this.xMin = this.bounds && this.bounds[0] || Math.min.apply(null, x);
           this.xMax = this.bounds && this.bounds[1] || Math.max.apply(null, x);
+        },
+
+        // Rows to add to a DataTable with the given number of existing columns.
+        rows: function(y, numOtherLines) {
+          var beta = jStat.multiply(this.M, jStat.transpose(y));
+          return [this.xMin, this.xMax].map(
+              function(x) {
+                var bareRow = [x, this.modelPrediction(x, beta)];
+                for (var i = 0; i < numOtherLines; ++i) {
+                  bareRow.splice(1, 0, null);
+                }
+                return bareRow;
+              }, this);
         }
       },
       options);
