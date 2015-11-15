@@ -332,6 +332,14 @@ function genericLinearModel(modelFunctions, options) {
           return this.inBounds(x) ? this.modelFunctions[i](x) : 0;
         },
 
+        // The total prediction for the model at x, given parameter values beta.
+        modelPrediction: function(x, beta) {
+          return beta.map(
+              function(v, i) {
+                return v * this.boundedModelFunction(x, i);
+              }, this).reduce(function(a, b) { return a + b; });
+        },
+
         // Compute a matrix to fit the data at these particular x-values (or at
         // least, the ones which are in-bounds if this model is bounded).
         train: function(x) {
