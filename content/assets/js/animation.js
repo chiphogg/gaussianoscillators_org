@@ -380,6 +380,7 @@ function linearModel(options) {
 // A set of data points which can change over time.
 //
 // Args:
+//   x:  The x-values
 //   options:  A dictionary of options, especially:
 //     y:  An array of y-values, assumed to be the same length as x.
 //     animatedNoise:  A Gaussian oscillator which defines how the data will
@@ -387,6 +388,7 @@ function linearModel(options) {
 function animatedDataGenerator(x, options) {
   return Object.assign(
       {
+        x: x,
         // Advance to the next data values.
         advance: function() {
           this.animatedNoise && this.animatedNoise.advance &&
@@ -404,14 +406,13 @@ function animatedDataGenerator(x, options) {
               }, this);
         },
 
-        // Useful for constructing a google.visualization.DataTable.
-        toJSON: function() {
-          return {
-            cols: [
-              {id: 'x', label: 'x', pattern: '', type: 'number'},
-              {id: 'y', label: 'y', pattern: '', type: 'number'}],
-            rows: zip([x, this.currentY()])
-          };
+        // A google.visualization.DataTable with this dataset's contents.
+        newDataTable: function() {
+          var dataTable = new google.visualization.DataTable();
+          dataTable.addColumn('number', 'x');
+          dataTable.addColumn('number', 'y');
+          dataTable.addRows(zip([x, this.currentY()]));
+          return dataTable;
         }
       },
       options);
