@@ -377,6 +377,39 @@ function linearModel(options) {
       options);
 }
 
+function disconnectedLinearModel(breaks, options) {
+  function constructIndividualModels() {
+    var models = [];
+    for (var i = 0; i < breaks.length - 1; ++i) {
+      models.push(linearModel(Object.assign(
+              options || {}, {bounds: [breaks[i], breaks[i + 1]]})))
+    }
+    return models;
+  }
+
+  return {
+    models: constructIndividualModels(),
+    train: function(x) {
+      for (var i = 0; i < this.models.length; ++i) {
+        this.models[i].train(x);
+      }
+    },
+    rows: function(y, numOtherLines) {
+      var rows = [];
+      for (var i = 0; i < this.models.length; ++i) {
+        var modelRows = this.models[i].rows(y, numOtherLines);
+        for (var j = 0; j < modelRows.length; ++j) {
+          rows.push(modelRows[j]);
+        }
+        // Add a row of null's to break between the lines.
+        rows.push(modelRows[0].map(function() { return null; }));
+      }
+      return rows;
+    }
+
+  };
+}
+
 // A set of data points which can change over time.
 //
 // Args:
