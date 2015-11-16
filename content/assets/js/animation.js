@@ -418,6 +418,56 @@ function animatedDataGenerator(x, options) {
       options);
 }
 
+function animatedDataTable(animatedData) {
+
+  function augmentDataTable(dataTable, model) {
+    var numOtherLines = dataTable.getNumberOfColumns() - 1;
+    var modelId = model.id || dataTable.getNumberOfColumns() - 1;
+    var modelLabel = model.label || ('Model ' + modelId);
+    // Add a new column.
+    dataTable.addColumn('number', modelLabel, modelId);
+    // Add rows for the model's output.
+    dataTable.addRows(model.rows(animatedData.currentY(),
+                                 numOtherLines));
+  }
+
+  return {
+    dataTable: animatedData.newDataTable(),
+    models: [],
+    addAndTrainModel: function(model) {
+      model.train(animatedData.x);
+      augmentDataTable(this.dataTable, model);
+      this.models.push(model);
+    },
+
+    update: function() {
+      animatedData.advance();
+
+      // The cumulative index into the DataTable.
+      var row = 0;
+      var column = 1;  // Skip 0: we don't update the 'x' column.
+
+      // Update the data itself.
+      var y = animatedData.currentY();
+      for (var i = 0; i < y.length; ++i) {
+        this.dataTable.setValue(row, column, y[i]);
+        row++;
+      }
+      column++;
+
+      // Update each model's row in turn.
+      for (var m = 0; m < this.models.length; ++m) {
+        var mRows = this.models[m].rows(y);
+        for (var i = 0; i < mRows.length; ++i) {
+          this.dataTable.setValue(row, column, mRows[i][1]);
+          row++;
+        }
+        column++;
+      }
+    },
+  };
+}
+
 // Return a chart object.
 function AnimatedChart(dataset_generator, div_id, title, chart_type, options) {
   chart_type = (typeof chart_type !== 'undefined') ?
