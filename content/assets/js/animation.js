@@ -354,10 +354,14 @@ function genericLinearModel(modelFunctions, options) {
           this.xMax = this.bounds && this.bounds[1] || Math.max.apply(null, x);
         },
 
+        plotPoints: function() {
+          return [this.xMin, this.xMax];
+        },
+
         // Rows to add to a DataTable with the given number of existing columns.
         rows: function(y, numOtherLines) {
           var beta = jStat.multiply(this.M, jStat.transpose(y));
-          return [this.xMin, this.xMax].map(
+          return this.plotPoints().map(
               function(x) {
                 var bareRow = [x, this.modelPrediction(x, beta)];
                 for (var i = 0; i < numOtherLines; ++i) {
@@ -408,6 +412,32 @@ function disconnectedLinearModel(breaks, options) {
     }
 
   };
+}
+
+function piecewiseLinearModel(x_breaks) {
+  // Build the list of basis functions.
+  // First, the constant function.
+  var functions = [function() { return 1; }];
+  // Now, for each breakpoint, a function which is zero before that breakpoint
+  // but linear afterwards.
+  function trendline(x_break) {
+    return function(x) { return (x >= x_break) ? (x - x_break) : 0; }
+  }
+  for (var i = 0; i < x_breaks.length; ++i) {
+    functions.push(trendline(x_breaks[i]));
+  }
+
+  return Object.assign(
+      genericLinearModel(functions),
+      {
+        plotPoints: function() {
+          // Copy x_breaks, and surround with xMin and xMax.
+          var points = x_breaks.slice();
+          points.unshift(this.xMin);
+          points.push(this.xMax);
+          return points;
+        }
+      });
 }
 
 // A set of data points which can change over time.
