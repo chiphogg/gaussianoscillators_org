@@ -334,6 +334,9 @@ function genericLinearModel(modelFunctions, options) {
 
         // The total prediction for the model at x, given parameter values beta.
         modelPrediction: function(x, beta) {
+          if (x == null) {
+            return null;
+          }
           return beta.map(
               function(v, i) {
                 return v * this.boundedModelFunction(x, i);
