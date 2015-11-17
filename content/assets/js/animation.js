@@ -473,8 +473,8 @@ function animatedDataGenerator(x, options) {
         // A google.visualization.DataTable with this dataset's contents.
         newDataTable: function() {
           var dataTable = new google.visualization.DataTable();
-          dataTable.addColumn('number', 'x');
-          dataTable.addColumn('number', 'y');
+          dataTable.addColumn('number', 'x', 'x');
+          dataTable.addColumn('number', 'y', 'y');
           dataTable.addRows(zip([x, this.currentY()]));
           return dataTable;
         }
