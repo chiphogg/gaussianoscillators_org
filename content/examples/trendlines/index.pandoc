@@ -47,16 +47,46 @@ function loaded() {
   allData.addAndTrainModel(badModel);
   allData.addAndTrainModel(goodModel);
 
-  // Construct a chart to show all these curves.
-  var chart = animatedChart({
-    parentId: 'randomness',
-    data: randomData,
-    frameLengthMs: frameLengthMs,
-    chart_options: {
-      title: 'Trendlines: connected, vs. not',
+  // It's more robust to refer to a data series by its ID, rather than by the
+  // column position which it happens to occupy.
+  function seriesNumberWithId(dataTable, id) {
+    for (var i = 1; i < dataTable.getNumberOfColumns(); ++i) {
+      if (dataTable.getColumnId(i) == id) {
+        return i - 1;
+      }
     }
-  });
-  chart.start();
+    return null;
+  }
+
+  // Construct a chart to show all these curves.
+  var dataChart = new google.visualization.LineChart(document.getElementById('randomness'));
+  var dataChartOptions =
+    {
+      title: 'Trendlines: connected, vs. not',
+      width: 800,
+      vAxis: {
+        viewWindow: {
+          min: -3.0,
+          max: 3.0,
+        },
+      },
+      animation: {
+        duration: frameLengthMs,
+        easing: 'linear',
+      },
+      height: 500
+      series: [],
+    };
+  dataChartOptions.series[seriesNumberWithId(allData.dataTable, 'disconnected')] = { color: 'red' };
+  dataChartOptions.series[seriesNumberWithId(allData.dataTable, 'connected')] = { color: 'blue' };
+  dataChartOptions.series[seriesNumberWithId(allData.dataTable, 'y')] = { color: '#888' };
+
+  function update() {
+    dataChart.draw(allData.dataTable, dataChartOptions);
+    allData.update();
+  }
+  var listener_id = google.visualization.events.addListener(dataChart, 'animationfinish', update);
+  update();
 }
 
 </script>
