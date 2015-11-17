@@ -417,7 +417,8 @@ function disconnectedLinearModel(breaks, options) {
 function piecewiseLinearModel(x_breaks) {
   // Build the list of basis functions.
   // First, the constant function.
-  var functions = [function() { return 1; }];
+  var functions = [function(_) { return 1; },
+                   function(x) { return x; }];
   // Now, for each breakpoint, a function which is zero before that breakpoint
   // but linear afterwards.
   function trendline(x_break) {
