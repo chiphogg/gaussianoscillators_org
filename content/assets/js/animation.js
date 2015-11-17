@@ -389,36 +389,33 @@ function linearModel(options) {
 }
 
 function disconnectedLinearModel(breaks, options) {
-  function constructIndividualModels() {
-    var models = [];
-    for (var i = 0; i < breaks.length - 1; ++i) {
-      models.push(linearModel(Object.assign(
-              options || {}, {bounds: [breaks[i], breaks[i + 1]]})))
-    }
-    return models;
+  function trendlineAtIOfOrder(i, order) {
+    return function(x) {
+      return (x >= breaks[i - 1] && x < breaks[i])
+          ? Math.pow(x - breaks[i - 1], order)
+          : 0;
+    };
+  }
+  var functions = [];
+  for (var i = 1; i < breaks.length; ++i) {
+    functions.push(trendlineAtIOfOrder(i, 0));
+    functions.push(trendlineAtIOfOrder(i, 1));
   }
 
-  return {
-    models: constructIndividualModels(),
-    train: function(x) {
-      for (var i = 0; i < this.models.length; ++i) {
-        this.models[i].train(x);
-      }
-    },
-    rows: function(y, numOtherLines) {
-      var rows = [];
-      for (var i = 0; i < this.models.length; ++i) {
-        var modelRows = this.models[i].rows(y, numOtherLines);
-        for (var j = 0; j < modelRows.length; ++j) {
-          rows.push(modelRows[j]);
-        }
-        // Add a row of null's to break between the lines.
-        rows.push(modelRows[0].map(function() { return null; }));
-      }
-      return rows;
-    }
-
-  };
+  return Object.assign(
+      genericLinearModel(functions),
+      {
+        plotPoints: function() {
+          var points = [];
+          var epsilon = (breaks[1] - breaks[0]) * 1e-6;  // lol
+          for (var i = 1; i < breaks.length; ++i) {
+            points.push(breaks[i - 1] + epsilon,
+                        breaks[i] - epsilon,
+                        null);
+          }
+          return points;
+        },
+      });
 }
 
 function piecewiseLinearModel(x_breaks) {
