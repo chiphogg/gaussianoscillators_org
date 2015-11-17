@@ -354,13 +354,17 @@ function genericLinearModel(modelFunctions, options) {
           this.xMax = this.bounds && this.bounds[1] || Math.max.apply(null, x);
         },
 
+        parameters: function(y) {
+          return jStat.multiply(this.M, jStat.transpose(y));
+        },
+
         plotPoints: function() {
           return [this.xMin, this.xMax];
         },
 
         // Rows to add to a DataTable with the given number of existing columns.
         rows: function(y, numOtherLines) {
-          var beta = jStat.multiply(this.M, jStat.transpose(y));
+          var beta = this.parameters(y);
           return this.plotPoints().map(
               function(x) {
                 var bareRow = [x, this.modelPrediction(x, beta)];
