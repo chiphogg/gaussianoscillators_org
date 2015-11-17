@@ -33,15 +33,19 @@ function loaded() {
     animatedNoise: cscOscillator
   });
 
+  // Build the models.
+  var badModel = disconnectedLinearModel(boundaryPoints);
+  badModel.label = 'Disconnected trendlines';
+  badModel.id = 'disconnected';
+  var goodModel = piecewiseLinearModel(boundaryPoints.slice(1, -1));
+  goodModel.label = 'Connected trendlines';
+  goodModel.id = 'connected';
+
   // Build a DataTable to hold all the data (both the random noise, and the
   // models which fit it).
   allData = animatedDataTable(randomData);
-  for (var i = 0; i < numSections; ++i) {
-    allData.addAndTrainModel(
-        linearModel(boundaryPoints[i], boundaryPoints[i + 1]));
-  }
-  var x_breaks = boundaryPoints.slice(1, -1);
-  allData.addAndTrainModel(piecewiseLinearModel(x_breaks));
+  allData.addAndTrainModel(badModel);
+  allData.addAndTrainModel(goodModel);
 
   // Construct a chart to show all these curves.
   var chart = animatedChart({
