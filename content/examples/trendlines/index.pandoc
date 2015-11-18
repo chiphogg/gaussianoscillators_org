@@ -91,6 +91,7 @@ function loaded() {
       animation: {
         duration: frameLengthMs,
         easing: 'linear',
+        startup: true,
       },
       height: 500
     };
