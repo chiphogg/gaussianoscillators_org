@@ -1,5 +1,7 @@
 <div id='randomness'></div>
 
+<div id='slopes'></div>
+
 <script type='text/javascript'>
 
 // Load the Visualization API.
@@ -33,6 +35,25 @@ function loaded() {
     animatedNoise: cscOscillator
   });
 
+  // Compute the slope in the middle of the region between every pair of
+  // consecutive breakpoints.
+  function slopes(model, parameters, boundaryPoints) {
+    var slopeValues = [];
+    for (var i = 1; i < boundaryPoints.length; ++i) {
+      // Find the boundaries of this region.
+      var xMin = boundaryPoints[i - 1];
+      var xMax = boundaryPoints[i];
+      // Compute points interior to this region.
+      var x0 = (2 * xMin + xMax) / 3;
+      var x1 = (xMin + 2 * xMax) / 3;
+      // Compute the slope.
+      var y0 = model.modelPrediction(x0, parameters);
+      var y1 = model.modelPrediction(x1, parameters);
+      slopeValues.push((y1 - y0) / (x1 - x0));
+    }
+    return slopeValues;
+  }
+
   // Build the models.
   var badModel = disconnectedLinearModel(boundaryPoints);
   badModel.label = 'Disconnected trendlines';
@@ -58,11 +79,8 @@ function loaded() {
     return null;
   }
 
-  // Construct a chart to show all these curves.
-  var dataChart = new google.visualization.LineChart(document.getElementById('randomness'));
-  var dataChartOptions =
-    {
-      title: 'Trendlines: connected, vs. not',
+  function baseChartOptions() {
+    return {
       width: 800,
       vAxis: {
         viewWindow: {
@@ -75,15 +93,55 @@ function loaded() {
         easing: 'linear',
       },
       height: 500
-      series: [],
     };
+  }
+
+  // Construct a chart to show all these curves.
+  var dataChart = new google.visualization.LineChart(document.getElementById('randomness'));
+  var dataChartOptions = Object.assign(
+      baseChartOptions(),
+      {
+        title: 'Trendlines: connected, vs. not',
+        series: [],
+      });
   dataChartOptions.series[seriesNumberWithId(allData.dataTable, 'disconnected')] = { color: 'red' };
   dataChartOptions.series[seriesNumberWithId(allData.dataTable, 'connected')] = { color: 'blue' };
   dataChartOptions.series[seriesNumberWithId(allData.dataTable, 'y')] = { color: '#888' };
 
+  var slopeTable = new google.visualization.DataTable()
+  slopeTable.addColumn('number', 'region');
+  slopeTable.addColumn('number', 'connected');
+  slopeTable.addColumn('number', 'disconnected');
+  for (var j = 1; j < boundaryPoints.length; ++j) {
+    slopeTable.addRow([j, 0, 0]);
+  }
+  var slopeChart = new google.visualization.ColumnChart(document.getElementById('slopes'));
+  var slopeChartOptions = Object.assign(
+      baseChartOptions(),
+      {
+        title: 'Slopes',
+        vAxis: {
+          viewWindow: {
+            min: -1.5,
+            max: 1.5,
+          },
+        },
+        series: [],
+      });
+  slopeChartOptions.series[seriesNumberWithId(slopeTable, 'disconnected')] = { color: 'red' };
+  slopeChartOptions.series[seriesNumberWithId(slopeTable, 'connected')] = { color: 'blue' };
+
   function update() {
     dataChart.draw(allData.dataTable, dataChartOptions);
+    slopeChart.draw(slopeTable, slopeChartOptions);
     allData.update();
+    var y = randomData.currentY();
+    var goodSlopes = slopes(goodModel, goodModel.parameters(y), boundaryPoints);
+    var badSlopes = slopes(badModel, badModel.parameters(y), boundaryPoints);
+    for (var j = 0; j < goodSlopes.length; ++j) {
+      slopeTable.setValue(j, 1, 1 * goodSlopes[j]);
+      slopeTable.setValue(j, 2, 1 * badSlopes[j]);
+    }
   }
   var listener_id = google.visualization.events.addListener(dataChart, 'animationfinish', update);
   update();
