@@ -24,7 +24,7 @@ function loaded() {
   // The changing part of the data will be a Gaussian Oscillator.  So at every
   // timestep, the data will be purely random and independent noise, but the
   // points will move smoothly from timestep to timestep.
-  var independenceTimeMs = 5000;
+  var independenceTimeMs = 10000;
   var frameLengthMs = 250;
   var numTimesteps = Math.round(independenceTimeMs / frameLengthMs);
   var cscOscillator = compactSupportCovarianceOscillator(totalPoints,
