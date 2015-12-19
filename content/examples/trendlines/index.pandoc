@@ -144,8 +144,31 @@ function loaded() {
       slopeTable.setValue(j, 2, 1 * badSlopes[j]);
     }
   }
-  var listener_id = google.visualization.events.addListener(dataChart, 'animationfinish', update);
+  var listenerId = google.visualization.events.addListener(dataChart, 'animationfinish', update);
   update();
+
+  toggleAnimation = function() {
+    if (listenerId == null) {
+      listenerId = google.visualization.events.addListener(dataChart, 'animationfinish', update);
+      update();
+    } else {
+      google.visualization.events.removeListener(listenerId);
+      listenerId = null;
+    }
+  }
 }
+
+
+handleKeyPress = function(e) {
+  e = e || window.event;
+  switch (String.fromCharCode(e.keyCode)) {
+    case 'p':
+      toggleAnimation();
+      break;
+    default:
+      return;
+  }
+}
+document.addEventListener("keypress", handleKeyPress, false);
 
 </script>
