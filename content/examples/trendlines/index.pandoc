@@ -2,6 +2,8 @@
 
 <div id='slopes'></div>
 
+<div id='independentSlopes'></div>
+
 <script type='text/javascript'>
 
 // Load the Visualization API.
@@ -109,6 +111,7 @@ function loaded() {
   dataChartOptions.series[seriesNumberWithId(allData.dataTable, 'connected')] = { color: 'blue' };
   dataChartOptions.series[seriesNumberWithId(allData.dataTable, 'y')] = { color: '#888' };
 
+  // Construct a chart to show the slope of each section.
   var slopeTable = new google.visualization.DataTable()
   slopeTable.addColumn('number', 'region');
   slopeTable.addColumn('number', 'connected');
@@ -117,24 +120,38 @@ function loaded() {
     slopeTable.addRow([j, 0, 0]);
   }
   var slopeChart = new google.visualization.ColumnChart(document.getElementById('slopes'));
+  var slopeViewWindow = { viewWindow: { min: -1.5, max: 1.5 } };
   var slopeChartOptions = Object.assign(
       baseChartOptions(),
       {
         title: 'Slopes',
-        vAxis: {
-          viewWindow: {
-            min: -1.5,
-            max: 1.5,
-          },
-        },
+        vAxis: slopeViewWindow,
         series: [],
       });
   slopeChartOptions.series[seriesNumberWithId(slopeTable, 'disconnected')] = { color: 'red' };
   slopeChartOptions.series[seriesNumberWithId(slopeTable, 'connected')] = { color: 'blue' };
 
+  independentSlopeTable = new google.visualization.DataTable();
+  independentSlopeTable.addColumn('number', 'connected');
+  independentSlopeTable.addColumn('number', 'disconnected');
+  var independentSlopeChart = new google.visualization.ScatterChart(document.getElementById('independentSlopes'));
+  var independentSlopeChartOptions = Object.assign(
+      baseChartOptions(),
+      {
+        title: 'Foo',
+        vAxis: slopeViewWindow,
+        hAxis: slopeViewWindow,
+        animation: { duration: 0 },
+        width: 700,
+        height: 700,
+      });
+  var countdownToIndependence = 0;
+  var sectionToShow = 0;
+
   function update() {
     dataChart.draw(allData.dataTable, dataChartOptions);
     slopeChart.draw(slopeTable, slopeChartOptions);
+    independentSlopeChart.draw(independentSlopeTable, independentSlopeChartOptions);
     allData.update();
     var y = randomData.currentY();
     var goodSlopes = slopes(goodModel, goodModel.parameters(y), boundaryPoints);
@@ -143,6 +160,13 @@ function loaded() {
       slopeTable.setValue(j, 1, 1 * goodSlopes[j]);
       slopeTable.setValue(j, 2, 1 * badSlopes[j]);
     }
+    if (countdownToIndependence == 0) {
+      countdownToIndependence = numTimesteps;
+      independentSlopeTable.addRow([1 * goodSlopes[sectionToShow],
+                                    1 * badSlopes[sectionToShow]]);
+      sectionToShow = (sectionToShow + 1) % goodSlopes.length;
+    }
+    --countdownToIndependence;
   }
   var listenerId = google.visualization.events.addListener(dataChart, 'animationfinish', update);
   update();
