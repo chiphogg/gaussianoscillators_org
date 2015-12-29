@@ -69,3 +69,156 @@ function LoopingCholesky(M) {
   }
   return L;
 };
+
+// Creates a deep copy of the given jStat matrix.
+//
+// Naively assumes that M is well formed (e.g., every row has the same number of
+// columns).
+//
+// Args:
+//    M:  A matrix (assumed equivalent to the output of jStat.create()).
+//
+// Returns:
+//    An array-of-arrays equivalent to the given matrix.
+function DeepCopyMatrixOnly(M) {
+  var matrix = jStat.zeros(M[0].length, M[0][0].length);
+  for (var i = 0; i < matrix.length; i++) {
+    for (var j = 0; j < matrix[i].length; j++) {
+      matrix[i][j] = M[0][i][j];
+    }
+  }
+  return matrix;
+}
+
+// Return the eigenvalues and eigenvectors of the matrix.
+//
+// This function will assume that these exist (and are real, and are
+// sufficiently well-conditioned, etc.) for the given matrix.  If it returns an
+// answer when these assumptions are false (which it might!), such an answer
+// would be meaningless.
+//
+// Args:
+//    M:  A matrix (structured equivalently to the output of jStat.create()).
+//
+// Returns:
+//    {
+//      vectors:  A matrix whose rows are the eigenvectors of M.
+//      values:  An array giving the eigenvalues which correspond to the
+//        eigenvectors.
+//    }
+function Eigen(M) {
+  // Use the jacobi algorithm [1], since it is more accurate than the QR
+  // algorithm [2].
+  //
+  // [1] https://en.wikipedia.org/wiki/Jacobi_eigenvalue_algorithm#Algorithm
+  // [2] "Jacobi’s Method is More Accurate than QR". James Demmel and Krešimir
+  //     Veselić, SIAM Journal on Matrix Analysis and Applications 1992 13:4,
+  //     1204-1245 http://dx.doi.org/10.1137/0613074
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Helper functions.
+
+  // The index of the off-diagonal element with maximal magnitude.
+  function IndexOfMaxOffDiagonalInRow(mat, row) {
+    var max_value = undefined;
+    var i_best = -1;
+    for (var i = 0; i < mat[row].length; i++) {
+      if (i == row) { continue; }
+      var value = Math.abs(mat[row][i]);
+      if (typeof max_value === "undefined" || value > max_value) {
+        max_value = value;
+        i_best = i;
+      }
+    }
+    return i_best;
+  }
+
+  // The "pivot row" is a row which contains a highest off-diagonal element.
+  //
+  // We assume that the i_columns array gives the index of the highest
+  // off-diagonal element for that row.
+  function PivotRow(mat, i_columns) {
+    var values = i_columns.map(function(v, i) {
+      return Math.abs(mat[i][v]);
+    });
+    return values.reduce(function(i_max, v, i, a) {
+      return v > a[i_max] ? i : i_max;
+    }, 0);
+  }
+
+  // Alter M in-place with a Givens rotation about columns i and j by angle
+  // theta.
+  function ApplyGivensRotation(M, i, j, theta) {
+    var c = Math.cos(theta);
+    var s = Math.sin(theta);
+    console.log('c: ' + c + '; s: ' + s);
+
+    // Update the diagonal elements (ii and jj).  (We'll need to save some
+    // information about their old values first!)
+    var new_cross_diagonal = (
+        (c * c - s * s) * M[i][j] +
+        s * c * (M[i][i] - M[j][j]));
+    M[i][i] = c * c * M[i][i] - 2 * s * c * M[i][j] + s * s * M[j][j];
+    M[j][j] = s * s * M[i][i] + 2 * s * c * M[i][j] + c * c * M[j][j];
+    console.log(M[i][i]);
+
+    // Update the cross-diagonal elements (ij and ji).
+    M[i][j] = M[j][i] = new_cross_diagonal;
+
+    // Update the off-diagonal elements (those with only one of i or j).
+    for (var k = 0; k < M.length; k++) {
+      if (k == i || k == j) {
+        continue;
+      }
+      var new_i = c * M[i][k] - s * M[j][k];
+      var new_j = s * M[i][k] + c * M[j][k];
+      M[i][k] = M[k][i] = new_i;
+      M[j][k] = M[k][j] = new_j;
+    }
+  }
+
+  // Zero out the (i, j) and (j, i) entries, logging them for posterity (so we
+  // can make sure they were already small).
+  function ZeroOutEntries(M, i, j) {
+    console.log('i: ' + i + '; j: ' + j +
+        '; (i, j): ' + M[i][j] + '; (j, i): ' + M[j][i]);
+    M[i][j] = M[j][i] = 0;
+  }
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Variable initializations.
+
+  // A copy of the matrix which we can modify without clobbering M.
+  var matrix = DeepCopyMatrixOnly(M);
+  // The dimension of the (assumed-to-be-square) matrix.
+  var n = matrix.length;
+  // The matrix which will eventually converge to the eigenvectors of M.
+  var eigenvectors = jStat.identity(n);
+  // The vector which will eventually converge to the eigenvalues of M.
+  var eigenvalues = jStat.transpose(jStat.diag(matrix));
+  // The number of rows we recently changed by a significant amount.
+  var num_rows_changed = n;
+  // The rows we recently changed by a significant amount.
+  var rows_changed = matrix.map(function() { return true; });
+  // The index, for each row, of its biggest off-diagonal element.
+  var max_index = matrix.map(function(v, i, a) {
+    return IndexOfMaxOffDiagonalInRow(a, i);
+  });
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Logic.
+
+  while (num_rows_changed > 0) {
+    // Find the location of the pivot.
+    var pivot_row = PivotRow(matrix, max_index);
+    var pivot_column = max_index[pivot_row];
+    // Compute the Givens rotation angle.
+    var theta = 0.5 * Math.atan2(2 * matrix[i][j], matrix[j][j] - matrix[i][i]);
+  }
+
+  return {
+    vectors: eigenvectors,
+    values: eigenvalues,
+  }
+}
+
