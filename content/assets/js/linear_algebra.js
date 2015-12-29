@@ -146,35 +146,15 @@ function Eigen(M) {
     }, 0);
   }
 
-  // Alter M in-place with a Givens rotation about columns i and j by angle
-  // theta.
-  function ApplyGivensRotation(M, i, j, theta) {
+  // Matrix for an n-D Givens rotation about columns i and j by angle theta.
+  function GivensRotationMatrix(n, i, j, theta) {
     var c = Math.cos(theta);
     var s = Math.sin(theta);
-    console.log('c: ' + c + '; s: ' + s);
 
-    // Update the diagonal elements (ii and jj).  (We'll need to save some
-    // information about their old values first!)
-    var new_cross_diagonal = (
-        (c * c - s * s) * M[i][j] +
-        s * c * (M[i][i] - M[j][j]));
-    M[i][i] = c * c * M[i][i] - 2 * s * c * M[i][j] + s * s * M[j][j];
-    M[j][j] = s * s * M[i][i] + 2 * s * c * M[i][j] + c * c * M[j][j];
-    console.log(M[i][i]);
-
-    // Update the cross-diagonal elements (ij and ji).
-    M[i][j] = M[j][i] = new_cross_diagonal;
-
-    // Update the off-diagonal elements (those with only one of i or j).
-    for (var k = 0; k < M.length; k++) {
-      if (k == i || k == j) {
-        continue;
-      }
-      var new_i = c * M[i][k] - s * M[j][k];
-      var new_j = s * M[i][k] + c * M[j][k];
-      M[i][k] = M[k][i] = new_i;
-      M[j][k] = M[k][j] = new_j;
-    }
+    var g = jStat.identity(n);
+    g[i][i] = g[j][j] = c;
+    g[i][j] = s;
+    g[j][i] = -s;
   }
 
   // Zero out the (i, j) and (j, i) entries, logging them for posterity (so we
