@@ -1,0 +1,9 @@
+---
+title: "Comparing models"
+js:
+  - jstat 
+  - linear_algebra
+  - covariance
+  - animation
+  - jquery
+---

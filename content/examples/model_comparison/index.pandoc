@@ -1,0 +1,107 @@
+<div id='models'></div>
+
+<script type='text/javascript'>
+
+// Load the Visualization API.
+google.load('visualization', '1.0', {'packages': ['corechart']});
+// Set a callback to run when the Google Visualization API is loaded.
+google.setOnLoadCallback(loaded);
+
+function loaded() {
+  // The total number of points.
+  var numPoints = 41;
+  // The x-values where we have data.
+  var x = Sequence(0, 8, numPoints);
+  // The changing part of the data will be a Gaussian Oscillator.  So at every
+  // timestep, the data will be purely random and independent noise, but the
+  // points will move smoothly from timestep to timestep.
+  var independenceTimeMs = 10000;
+  var frameLengthMs = 250;
+  var numTimesteps = Math.round(independenceTimeMs / frameLengthMs);
+  var cscOscillator = compactSupportCovarianceOscillator(numPoints,
+                                                         numTimesteps);
+
+  // Construct four priors which will all share the same underlying random data.
+  var priors = {
+    'Exponential': DatasetGenerator(
+        x, jStat(x).multiply(0), Exponential(1, 1), numTimesteps),
+    'Matern3v2': DatasetGenerator(
+        x, jStat(x).multiply(0), Matern3v2(1, 1), numTimesteps),
+    'Matern5v2': DatasetGenerator(
+        x, jStat(x).multiply(0), Matern5v2(1, 1), numTimesteps),
+    'SquaredExponential': DatasetGenerator(
+        x, jStat(x).multiply(0), SquaredExponential(1, 1), numTimesteps),
+  }
+  ppp = priors;
+  for (var key of Object.keys(priors)) {
+    priors[key].gaussianOscillator = cscOscillator;
+  }
+
+  // Construct a google data table to hold all our plots.
+  dataTable = new google.visualization.DataTable();
+  dataTable.addColumn('number', 'x', 'x');
+  var initialRows = [x];
+  for (var key of Object.keys(priors)) {
+    dataTable.addColumn('number', key, key);
+    initialRows.push(priors[key].CurrentDataset());
+  }
+  dataTable.addRows(zip(initialRows));
+
+  // Build the chart.
+  priorChart = new google.visualization.LineChart(
+      document.getElementById('models'));
+  priorChartOptions = {
+    width: 800,
+    vAxis: {
+      viewWindow: {
+        min: -3.0,
+        max: 3.0,
+      },
+    },
+    animation: {
+      duration: frameLengthMs,
+      easing: 'linear',
+      startup: true,
+    },
+    height: 500,
+    title: 'Comparing models of the Matérn family',
+  };
+
+  function update() {
+    priorChart.draw(dataTable, priorChartOptions);
+
+    cscOscillator.advance();
+    for (var key of Object.keys(priors)) {
+      var col_num = columnNumberWithId(dataTable, key);
+      var values = priors[key].CurrentDataset();
+      for (var row = 0; row < values.length; ++row) {
+        dataTable.setValue(row, col_num, values[row]);
+      }
+    }
+  }
+  var listenerId = google.visualization.events.addListener(priorChart, 'animationfinish', update);
+
+  toggleAnimation = function() {
+    if (listenerId == null) {
+      listenerId = google.visualization.events.addListener(priorChart, 'animationfinish', update);
+      update();
+    } else {
+      google.visualization.events.removeListener(listenerId);
+      listenerId = null;
+    }
+  }
+}
+
+handleKeyPress = function(e) {
+  e = e || window.event;
+  switch (String.fromCharCode(e.keyCode)) {
+    case 'p':
+      toggleAnimation();
+      break;
+    default:
+      return;
+  }
+}
+document.addEventListener("keypress", handleKeyPress, false);
+
+</script>
