@@ -281,11 +281,14 @@ function DatasetGenerator(x, mu, kFunc, n_t) {
         alert('Abstract base class!  Must override gaussianOscillator.');
       }
     },
-    // Advance to the next dataset and return it.
+    // Return the current dataset without advancing.
+    CurrentDataset: function() {
+      return jStat(this.gaussianOscillator.currentNoise()).multiply(U)[0];
+    },
     // Advance to the next dataset and return it.
     NextDataset: function() {
       this.gaussianOscillator.advance();
-      return jStat(this.gaussianOscillator.currentNoise()).multiply(U)[0];
+      return this.CurrentDataset();
     },
     // Update to a new space-domain covariance.
     UpdateCovariance: function(kFunc) {
