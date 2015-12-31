@@ -22,6 +22,21 @@ function newStandardNormalsForRow(matrix, row) {
   }
 }
 
+// It's more robust to refer to a data series by its ID, rather than by the
+// column position which it happens to occupy.
+function columnNumberWithId(dataTable, id) {
+  for (var i = 1; i < dataTable.getNumberOfColumns(); ++i) {
+    if (dataTable.getColumnId(i) == id) {
+      return i;
+    }
+  }
+  return null;
+}
+function seriesNumberWithId(dataTable, id) {
+  var col_num = columnNumberWithId(dataTable, id);
+  return (col_num != null && col_num > 0) ? col_num - 1 : null;
+}
+
 //------------------------------------------------------------------------------
 // Gaussian oscillators.
 

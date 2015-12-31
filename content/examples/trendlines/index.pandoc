@@ -1,3 +1,14 @@
+What's left to do?
+
+- Start collecting stats automatically.
+  - Plot ideas:
+    - Standard deviation of each.
+- Speed controls
+- Play/pause
+
+Ideas
+- When I simulate a "true" pause, can I show **bias**?
+
 <div id='randomness'></div>
 
 <div id='slopes'></div>
@@ -69,17 +80,6 @@ function loaded() {
   allData = animatedDataTable(randomData);
   allData.addAndTrainModel(badModel);
   allData.addAndTrainModel(goodModel);
-
-  // It's more robust to refer to a data series by its ID, rather than by the
-  // column position which it happens to occupy.
-  function seriesNumberWithId(dataTable, id) {
-    for (var i = 1; i < dataTable.getNumberOfColumns(); ++i) {
-      if (dataTable.getColumnId(i) == id) {
-        return i - 1;
-      }
-    }
-    return null;
-  }
 
   function baseChartOptions() {
     return {
