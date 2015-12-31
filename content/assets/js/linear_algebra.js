@@ -156,8 +156,6 @@ function Eigen(M) {
   var n = matrix.length;
   // The matrix which will eventually converge to the eigenvectors of M.
   var eigenvectors = jStat.identity(n);
-  // The vector which will eventually converge to the eigenvalues of M.
-  var eigenvalues = jStat.transpose(jStat.diag(matrix));
   // The number of rows we recently changed by a significant amount.
   var num_rows_changed = n;
   // The rows we recently changed by a significant amount.
@@ -200,7 +198,7 @@ function Eigen(M) {
 
   return {
     vectors: eigenvectors,
-    values: eigenvalues,
+    values: jStat.transpose(jStat.diag(matrix)),
   }
 }
 
