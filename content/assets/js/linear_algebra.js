@@ -202,3 +202,22 @@ function Eigen(M) {
   }
 }
 
+// A diagonal matrix whose diagonal elements are as given.
+function DiagonalMatrix(values) {
+  var n = values.length;
+  var matrix = jStat.identity(n);
+  for (var i = 0; i < n; i++) {
+    matrix[i][i] = values[i];
+  }
+  return matrix;
+}
+
+// A symmetric square root of the covariance matrix K.
+function SymmetricSquareRoot(K) {
+  var eigen = Eigen(K);
+  return jStat.multiply(
+      jStat.transpose(eigen.vectors),
+      jStat.multiply(
+        DiagonalMatrix(eigen.values.map(function(v) { return Math.sqrt(v); })),
+        eigen.vectors));
+}
