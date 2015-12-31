@@ -268,7 +268,7 @@ function upperCholeskyCovariance(x, kFunc) {
 
 function DatasetGenerator(x, mu, kFunc, n_t) {
   // The upper-triangular cholesky root of the (space) covariance matrix.
-  var U = upperCholeskyCovariance(x, kFunc);
+  var U = SymmetricSquareRoot(CovarianceMatrix(x, kFunc));
 
   return {
     // The x-values for this closure.
@@ -292,7 +292,7 @@ function DatasetGenerator(x, mu, kFunc, n_t) {
     },
     // Update to a new space-domain covariance.
     UpdateCovariance: function(kFunc) {
-      U = upperCholeskyCovariance(this.x, kFunc);
+      U = SymmetricSquareRoot(CovarianceMatrix(x, kFunc));
     }
   };
 };
