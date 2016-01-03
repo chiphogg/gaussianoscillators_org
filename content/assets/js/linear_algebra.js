@@ -97,12 +97,11 @@ function GivensRotationMatrix(n, i, j, theta) {
   return g;
 }
 
-// The index of the off-diagonal element with maximal magnitude.
-function IndexOfMaxOffDiagonalInRow(mat, row) {
+// The index of the super-diagonal element with maximal magnitude.
+function IndexOfMaxSuperDiagonalInRow(mat, row) {
   var max_value = undefined;
   var i_best = -1;
-  for (var i = 0; i < mat[row].length; i++) {
-    if (i == row) { continue; }
+  for (var i = row + 1; i < mat[row].length; i++) {
     var value = Math.abs(mat[row][i]);
     if (typeof max_value === "undefined" || value > max_value) {
       max_value = value;
@@ -150,6 +149,40 @@ function Eigen(M) {
   //     Veselić, SIAM Journal on Matrix Analysis and Applications 1992 13:4,
   //     1204-1245 http://dx.doi.org/10.1137/0613074
 
+  // Translate logical coordinates into actual coordinates.
+  //
+  // If a symmetric matrix is stored as upper-triangular only for efficiency,
+  // then the values from the lower triangular region will be nonsense, and we
+  // need to be careful to avoid them.
+  function Coords(row, col, upper_only) {
+    return (upper_only && row > col) ? [col, row] : [row, col];
+  }
+
+  // Rotate columns i and j by angle theta.
+  //
+  // If upper_only is true, we will only read and write from the
+  // upper-triangular portion of the matrix, and we will skip elements in the
+  // ith and jth row or column, since those need to be handled specially.
+  //
+  // Actually, having this one function handle both cases is brittle and makes
+  // the code harder to read and understand.  I should refactor this. :P
+  function AdHocRotation(matrix, i, j, theta, upper_only) {
+    var c = Math.cos(theta);
+    var s = Math.sin(theta);
+    for (var row = 0; row < matrix.length; ++row) {
+      if (upper_only && (row == i || row == j)) {
+        // We need to handle the ii, ij/ji, and jj elements specially.
+        continue;
+      }
+      var i_coords = Coords(row, i, upper_only);
+      var j_coords = Coords(row, j, upper_only);
+      var m_i = matrix[i_coords[0]][i_coords[1]];
+      var m_j = matrix[j_coords[0]][j_coords[1]];
+      matrix[i_coords[0]][i_coords[1]] = c * m_i - s * m_j;
+      matrix[j_coords[0]][j_coords[1]] = s * m_i + c * m_j;
+    }
+  }
+
   // A copy of the matrix which we can modify without clobbering M.
   var matrix = DeepCopy(M);
   // The dimension of the (assumed-to-be-square) matrix.
@@ -160,18 +193,20 @@ function Eigen(M) {
   var num_rows_changed = n;
   // The rows we recently changed by a significant amount.
   var rows_changed = matrix.map(function() { return true; });
-  // The index, for each row, of its biggest off-diagonal element.
+  // The index, for each row, of its biggest super-diagonal element.  (We remove
+  // the final element since the last row has no super-diagonal elements.)
   var max_index = matrix.map(function(v, i, a) {
-    return IndexOfMaxOffDiagonalInRow(a, i);
+    return IndexOfMaxSuperDiagonalInRow(a, i);
   });
+  max_index.pop()
   // The threshold for the highest nonzero element to be considered "close
   // enough" to zero.
-  var pivot_threshold = 1e-6;
+  var pivot_threshold = 1e-12;
   // The number of iterations we have taken.
   var iter = 0;
 
   // Iterate until our pivot is under the threshold n times consecutively.
-  var num_good_in_a_row = 5;
+  var num_good_in_a_row = n;
   var countdown = num_good_in_a_row;
   while (countdown > 0) {
     iter++;
@@ -185,20 +220,30 @@ function Eigen(M) {
     var theta = 0.5 * Math.atan2(
         2 * matrix[pivot_row][pivot_column],
         matrix[pivot_column][pivot_column] - matrix[pivot_row][pivot_row]);
-    var g_mat = GivensRotationMatrix(n, pivot_row, pivot_column, theta);
-    var g_mat_t = jStat.transpose(g_mat);
     // Apply the Givens matrix to the input matrix and the eigenvector matrix.
-    matrix = jStat.multiply(g_mat, jStat.multiply(matrix, g_mat_t));
+    AdHocRotation(matrix, pivot_row, pivot_column, theta,
+                  /* upper_only = */ true);
+    // Handle the ii, ij/ji, and jj elements specially.
+    delta_i_j = (
+        Math.pow(Math.sin(theta), 2) * (
+          matrix[pivot_row][pivot_row] - matrix[pivot_column][pivot_column]) +
+        Math.sin(2 * theta) * matrix[pivot_row][pivot_column]);
+    matrix[pivot_row][pivot_row] -= delta_i_j;
+    matrix[pivot_column][pivot_column] += delta_i_j;
     matrix[pivot_row][pivot_column] = matrix[pivot_column][pivot_row] = 0;
-    eigenvectors = jStat.multiply(g_mat, eigenvectors);
     // Update the max_index array.
-    max_index[pivot_row] = IndexOfMaxOffDiagonalInRow(matrix, pivot_row);
-    max_index[pivot_column] = IndexOfMaxOffDiagonalInRow(matrix, pivot_column);
+    max_index[pivot_row] = IndexOfMaxSuperDiagonalInRow(matrix, pivot_row);
+    if (pivot_column < matrix.length - 1) {
+      max_index[pivot_column] = IndexOfMaxSuperDiagonalInRow(
+          matrix, pivot_column);
+    }
+    // Update the eigenvectors too.
+    AdHocRotation(eigenvectors, pivot_row, pivot_column, theta,
+                  /* upper_only = */ false);
   }
-  console.log("Found eigendecomposition in " + iter + " iterations.");
 
   return {
-    vectors: eigenvectors,
+    vectors: jStat.transpose(eigenvectors),
     values: jStat.transpose(jStat.diag(matrix)),
   }
 }
