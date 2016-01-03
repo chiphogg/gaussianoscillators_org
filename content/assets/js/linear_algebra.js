@@ -92,8 +92,8 @@ function GivensRotationMatrix(n, i, j, theta) {
   var s = Math.sin(theta);
   var g = jStat.identity(n);
   g[i][i] = g[j][j] = c;
-  g[i][j] = s;
-  g[j][i] = -s;
+  g[i][j] = -s;
+  g[j][i] = s;
   return g;
 }
 
@@ -181,7 +181,7 @@ function Eigen(M) {
     countdown = (Math.abs(matrix[pivot_row][pivot_column]) < pivot_threshold) ?
       (countdown - 1) : n;
     // Compute the Givens rotation angle and matrix.
-    var theta = -0.5 * Math.atan2(
+    var theta = 0.5 * Math.atan2(
         2 * matrix[pivot_row][pivot_column],
         matrix[pivot_column][pivot_column] - matrix[pivot_row][pivot_row]);
     var g_mat = GivensRotationMatrix(n, pivot_row, pivot_column, theta);
