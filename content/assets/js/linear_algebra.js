@@ -171,7 +171,8 @@ function Eigen(M) {
   var iter = 0;
 
   // Iterate until our pivot is under the threshold n times consecutively.
-  var countdown = n;
+  var num_good_in_a_row = 5;
+  var countdown = num_good_in_a_row;
   while (countdown > 0) {
     iter++;
     // Find the location of the pivot.
@@ -179,7 +180,7 @@ function Eigen(M) {
     var pivot_column = max_index[pivot_row];
     // Check the end condition.
     countdown = (Math.abs(matrix[pivot_row][pivot_column]) < pivot_threshold) ?
-      (countdown - 1) : n;
+      (countdown - 1) : num_good_in_a_row;
     // Compute the Givens rotation angle and matrix.
     var theta = 0.5 * Math.atan2(
         2 * matrix[pivot_row][pivot_column],
