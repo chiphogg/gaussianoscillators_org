@@ -201,7 +201,7 @@ function Eigen(M) {
   max_index.pop()
   // The threshold for the highest nonzero element to be considered "close
   // enough" to zero.
-  var pivot_threshold = 1e-12;
+  var pivot_threshold = 1e-16;
   // The number of iterations we have taken.
   var iter = 0;
 
