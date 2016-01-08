@@ -25,12 +25,20 @@ function loaded() {
   var priors = {
     'Exponential': DatasetGenerator(
         x, jStat(x).multiply(0), Exponential(1, 1), numTimesteps),
+    'Exponential2': DatasetGenerator(
+        x, jStat(x).multiply(0), Exponential(2, 1), numTimesteps),
+    'Exponential10': DatasetGenerator(
+        x, jStat(x).multiply(0), Exponential(10, 1), numTimesteps),
+    'Exponential100': DatasetGenerator(
+        x, jStat(x).multiply(0), Exponential(100, 1), numTimesteps),
     //'Matern3v2': DatasetGenerator(
     //    x, jStat(x).multiply(0), Matern3v2(1, 1), numTimesteps),
     //'Matern5v2': DatasetGenerator(
     //    x, jStat(x).multiply(0), Matern5v2(1, 1), numTimesteps),
-    'SquaredExponential': DatasetGenerator(
-        x, jStat(x).multiply(0), SquaredExponential(1, 1), numTimesteps),
+    //'SquaredExponential': DatasetGenerator(
+    //    x, jStat(x).multiply(0), SquaredExponential(1, 1), numTimesteps),
+    //'SquaredExponential2': DatasetGenerator(
+    //    x, jStat(x).multiply(0), SquaredExponential(2, 1), numTimesteps),
   }
   ppp = priors;
   for (var key of Object.keys(priors)) {
