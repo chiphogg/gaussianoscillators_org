@@ -479,6 +479,11 @@ function animatedDataGenerator(x, options) {
         advance: function() {
           this.animatedNoise && this.animatedNoise.advance &&
             this.animatedNoise.advance();
+          this.currentNoise = this.animatedNoise.currentNoise();
+          if (this.noiseMatrix) {
+            this.currentNoise = jStat.transpose(
+                this.noiseMatrix.multiply(jStat.transpose(this.currentNoise)));
+          }
         },
 
         // Retrieve the current y-value.  Both this.y and this.currentNoise
@@ -487,8 +492,7 @@ function animatedDataGenerator(x, options) {
           return x.map(
               function(_, i) {
                 return (this.y && this.y[i] || 0) +
-                       (this.animatedNoise &&
-                        this.animatedNoise.currentNoise()[i] || 0);
+                       (this.currentNoise && this.currentNoise[i] || 0);
               }, this);
         },
 
