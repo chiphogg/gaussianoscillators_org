@@ -384,11 +384,16 @@ function genericLinearModel(modelFunctions, options) {
         },
 
         // Rows to add to a DataTable with the given number of existing columns.
+        //
+        // y:  The current y-values.
+        // numOtherLines:  The number of other lines in the plot before this
+        //   one.
         rows: function(y, numOtherLines) {
           var beta = this.parameters(y);
           return this.plotPoints().map(
               function(x) {
-                var bareRow = [x, this.modelPrediction(x, beta)];
+                var bareRow = [this.xFunc && this.xFunc(x) || x,
+                               this.modelPrediction(x, beta)];
                 for (var i = 0; i < numOtherLines; ++i) {
                   bareRow.splice(1, 0, null);
                 }
@@ -499,7 +504,7 @@ function animatedDataGenerator(x, options) {
         // A google.visualization.DataTable with this dataset's contents.
         newDataTable: function() {
           var dataTable = new google.visualization.DataTable();
-          dataTable.addColumn('number', 'x', 'x');
+          dataTable.addColumn(this.x_type && this.x_type || 'number', 'x', 'x');
           dataTable.addColumn('number', 'y', 'y');
           dataTable.addRows(zip([x, this.currentY()]));
           return dataTable;
