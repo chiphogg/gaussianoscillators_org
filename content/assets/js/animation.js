@@ -421,7 +421,7 @@ function disconnectedLinearModel(breaks, options) {
   }
 
   return Object.assign(
-      genericLinearModel(functions),
+      genericLinearModel(functions, options),
       {
         plotPoints: function() {
           var points = [];
@@ -436,7 +436,7 @@ function disconnectedLinearModel(breaks, options) {
       });
 }
 
-function piecewiseLinearModel(x_breaks) {
+function piecewiseLinearModel(x_breaks, options) {
   // Build the list of basis functions.
   // First, the constant function.
   var functions = [function(_) { return 1; },
@@ -451,7 +451,7 @@ function piecewiseLinearModel(x_breaks) {
   }
 
   return Object.assign(
-      genericLinearModel(functions),
+      genericLinearModel(functions, options),
       {
         plotPoints: function() {
           // Copy x_breaks, and surround with xMin and xMax.
