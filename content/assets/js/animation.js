@@ -1,11 +1,11 @@
 // Copyright 2015 Charles R. Hogg III and Google Inc. All Rights Reserved.
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -97,7 +97,7 @@ function interpolatingOscillator(n, n_t) {
     var new_factor = Math.sin(angle);
     for (var j = 0; j < cachedNoise.length; ++j) {
       cachedNoise[j] = (old_factor * noise[i_prev][j] +
-                        new_factor * noise[1 - i_prev][j]); 
+                        new_factor * noise[1 - i_prev][j]);
     }
   }
 
@@ -480,13 +480,13 @@ function animatedDataGenerator(x, options) {
           this.animatedNoise && this.animatedNoise.advance &&
             this.animatedNoise.advance();
         },
-        
+
         // Retrieve the current y-value.  Both this.y and this.currentNoise
         // default to 0 if absent.
         currentY: function() {
           return x.map(
               function(_, i) {
-                return (this.y && this.y[i] || 0) + 
+                return (this.y && this.y[i] || 0) +
                        (this.animatedNoise &&
                         this.animatedNoise.currentNoise()[i] || 0);
               }, this);
